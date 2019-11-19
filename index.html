@@ -35,12 +35,11 @@
     
     // Create the context so we get sound and can play things back.
     context = new (window.AudioContext || window.webkitAudioContext)();
-  
+    
     // Now we are setting things up for the osc at load
     function setup() {
       
       // Create the context so we get sound and can play things back.
-//      context = new (window.AudioContext || window.webkitAudioContext)();
       
       // Setting up button and volume control events
       playButton = document.querySelector("#playButton");
@@ -95,7 +94,7 @@
       function updateWaveform() {
         requestAnimationFrame(updateWaveform);
         analyser.getFloatTimeDomainData(waveform);
-      }
+      };
       
       // Establish FFT size
       analyser.fftSize = 2048;
@@ -143,7 +142,7 @@
 
           x += sliceWidth;
 
-        }
+        };
         
         canvasCTX.lineTo(canvas.width, canvas.height / 2);
         canvasCTX.stroke();
@@ -151,23 +150,26 @@
     
     draw();
      
-   }
+   };
     
    // On page load call setup  
    window.addEventListener("load", setup, false);
     
     // Now for ze toggle. Check to see if playing and if so stop, if not play.
+    // ***TO DO*** move the recording. Basically, now it records when you preview.
+    // We wll want to be much more specific about it at some point. 
+    // The target for a wavetable is 2048 frames @ 44,100 sample rate. 
     function togglePlay(event) {
       if (playing) {
-//        mediaRecorder.stop();
+        mediaRecorder.stop();
         playButton.innerHTML = "⏸";
         stopOscillators(0);
       } else {
         playButton.innerHTML = "▶️";
-//        mediaRecorder.start();
+        mediaRecorder.start();
         startOscillators(0);
       }
-    }
+    };
     
     // Bind the control to the osc volume
     //
@@ -175,7 +177,7 @@
     // Once its started up the slider will work to raise/lower the volume. 
     function changeVolume(event) {
       constantNode.offset.value = volumeControl.value;
-    }
+    };
     
     // Start up the oscillators. Ima have them play a chord.
     function startOscillators() {
@@ -209,9 +211,14 @@
       oscNode2.start();
       oscNode3.start();
       
+      // This bit connects the osc directly to the media stream
+      oscNode1.connect(dest);
+      oscNode2.connect(dest);
+      oscNode3.connect(dest);
+      
       // Toggle the flag
       playing = true;     
-    }
+    };
     
     // Will you stop already....Well, sure.
     // Stop the oscillators from running. 
@@ -220,7 +227,7 @@
       oscNode2.stop();
       oscNode3.stop();
       playing = false;
-    }
+    };
     
     /////////////////////////////////////////////////////////////
     // ***TO DO ***                                            //
@@ -230,29 +237,28 @@
     /////////////////////////////////////////////////////////////
     
     // Setting up file creation stuff 
-//    var chunks = [];
-//    var dest = context.createMediaStreamDestination();
-//    var mediaRecorder = new MediaRecorder(dest.stream);
-//    oscNode1.connect(dest);
-//    oscNode2.connect(dest);
-//    oscNode3.connect(dest);
-//    
-//    mediaRecorder.ondataavailable = function(event) {
-//      // stuff the chunks into the blob
-//      chunks.push(event.data);
-//    }
-//    
-//    mediaRecorder.onstop = function(event) {
-//      // Take all of the blobs and then make another blob of them
-//      // I have
-//      
-//      var blob = new Blob(chunks, {'type' : 'audio/ogg; codec=opus'})
-//      document.querySelector("audio").src = URL.createObjectURL(blob);
-//    }
+    var chunks = [];
+    var dest = context.createMediaStreamDestination();
+    var mediaRecorder = new MediaRecorder(dest.stream);
     
+    mediaRecorder.ondataavailable = function(event) {
+      // stuff the chunks into the blob
+      chunks.push(event.data);
+    };
+    
+    
+    mediaRecorder.onstop = function(event) {
+      // Take all of the blobs and then make another blob of them
+      // I have a check to make sure you can play the file back
+      // ***TO DO*** Set the sample rate and bit depth
+      
+//      mediaRecorder.isTypeSupported('audio/wav; codecs=0');
+      
+      var blob = new Blob(chunks, {'type' : 'audio/wav; codecs=0'});
+      document.querySelector("audio").src = URL.createObjectURL(blob);
+    };
     
     </script>
-
 </head>
 <body>
   <div class="div-block-7">
