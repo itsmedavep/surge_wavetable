@@ -13,7 +13,7 @@
   <script>
   // Stubbing in everything here. Move this all over to an external file eventually.
     
-    // Global variable init
+    // Global Scope variable init
     let context = null;
     
     let playButton = null;
@@ -33,6 +33,21 @@
     
     // Create the context so we get sound and can play things back.
     context = new (window.AudioContext || window.webkitAudioContext)();
+    
+    
+    var channel = 0;
+      
+    // Mono
+    var channels = 1;
+      
+    // If my math is right (which is always questionable LOL) that gives us this:
+    // .046 second long wave file with a fundamental of 43.5Hz
+    // Since that puts the tone in the deep base range we can get a way with preview at a more reaasonable setting like 217.4Hz
+    var frameCount = context.sampleRate * .046;
+      
+    
+    //Create our buffer. Starts out empty. We need 2048 frames, at 44,100 mono PCM 32 bit riff wave file.
+    var oscBuffer = context.createBuffer(channels, frameCount, context.sampleRate);
     
     // Now we are setting things up for the osc at load
     function setup() {
@@ -166,6 +181,8 @@
         playButton.innerHTML = "▶️";
         mediaRecorder.start();
         startOscillators(0);
+        // Start the source playing
+        source.start();
       }
     };
     
@@ -177,9 +194,17 @@
       constantNode.offset.value = volumeControl.value;
     };
     
-    // Start up the oscillators. Ima have them play a chord.
+    // Start up the oscillators.
     function startOscillators() {
       
+      // Fill this buffer up will ya
+      for (channel; channel < channels; channel++) {
+          // Lets do an array that contains our data now
+          var nowBuffering = oscBuffer.getChannelData(channel);
+          for (var i = 0; i < frameCount; i++) {
+              nowBuffering[i] = (oscNode1, oscNode2, oscNode3);
+          }
+      }
       ////////////////////////////////////////////////////////////////////////////
       // The 251.6 value comes from this:                                       //
       // Playback the osc at 251.6 so when we render at 44,100 with 2048 frames //
@@ -213,6 +238,7 @@
       oscNode1.connect(dest);
       oscNode2.connect(dest);
       oscNode3.connect(dest);
+        
       
       // Toggle the flag
       playing = true;     
@@ -226,6 +252,15 @@
       oscNode3.stop();
       playing = false;
     };
+      
+    // AudioBufferSourceNode. Use this badboy when we want to play an audio buffer
+    var source = context.createBufferSource();
+      
+    // Get our buffer into the AudioBufferSourceNode
+    source.buffer = oscBuffer;
+      
+    // Connect AudioBufferSourceNode to the destination so we can hear stuff
+    source.connect(context.destination);
     
     /////////////////////////////////////////////////////////////
     // ***TO DO ***                                            //
